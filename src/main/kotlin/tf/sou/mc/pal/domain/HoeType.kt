@@ -19,7 +19,15 @@ package tf.sou.mc.pal.domain
 import org.bukkit.Material
 import org.bukkit.event.player.PlayerInteractEvent
 import tf.sou.mc.pal.ChestPal
-import tf.sou.mc.pal.utils.*
+import tf.sou.mc.pal.utils.SENDER_MATERIAL
+import tf.sou.mc.pal.utils.RECEIVER_MATERIAL
+import tf.sou.mc.pal.utils.resolveContainer
+import tf.sou.mc.pal.utils.toVectorString
+import tf.sou.mc.pal.utils.toPrettyString
+import tf.sou.mc.pal.utils.findItemFrame
+import tf.sou.mc.pal.utils.toChestInventoryProxy
+import tf.sou.mc.pal.utils.asTextComponent
+import tf.sou.mc.pal.utils.reply
 
 /**
  * Stateless actor enum for [Material] based interactions with a chest.

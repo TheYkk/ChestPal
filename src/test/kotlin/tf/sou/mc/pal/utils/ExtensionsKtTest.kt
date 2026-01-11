@@ -43,7 +43,7 @@ internal class ExtensionsKtTest {
         "129,DIRT,3"
     )
     fun `test item stacks calculation`(amount: Int, material: Material, listSize: Int) {
-        assertThat(amount.asItemStacks(material).size).isEqualTo(listSize)
+        assertThat(amount.asItemStacks(material.asSingleItem()).size).isEqualTo(listSize)
     }
 
     @ParameterizedTest
