@@ -91,8 +91,13 @@ class ChestListener(private val pal: ChestPal) : Listener {
                 val available = chest.inventory.countAvailableSpace(materialType)
                 val allowedToAdd = available.coerceAtMost(totalTransportAmount)
                 if (allowedToAdd > 0) {
-                    allowedToAdd.asItemStacks(originalItem).forEach { chest.inventory.addItem(it) }
-                    totalTransportAmount -= allowedToAdd
+                    var actuallyAdded = 0
+                    for (stack in allowedToAdd.asItemStacks(originalItem)) {
+                        val leftover = chest.inventory.addItem(stack)
+                        val notAdded = leftover.values.sumOf { it.amount }
+                        actuallyAdded += (stack.amount - notAdded)
+                    }
+                    totalTransportAmount -= actuallyAdded
                 }
             }
 
@@ -149,7 +154,7 @@ class ChestListener(private val pal: ChestPal) : Listener {
         if (event.action != Action.RIGHT_CLICK_BLOCK) return
 
         val clickedBlock = event.clickedBlock ?: return
-        if (clickedBlock.type != Material.CHEST && clickedBlock.type != Material.TRAPPED_CHEST) return
+        if (clickedBlock.location.resolveContainer() == null) return
 
         val itemInHand = event.player.inventory.itemInMainHand
         val hoeType = HoeType.find(itemInHand) ?: return
@@ -159,8 +164,6 @@ class ChestListener(private val pal: ChestPal) : Listener {
 
     @EventHandler
     fun onBlockBreakEvent(event: BlockBreakEvent) {
-        if (event.block.type != Material.CHEST && event.block.type != Material.TRAPPED_CHEST) return
-
         val container = event.block.location.resolveContainer() ?: return
         val proxy = container.inventory.toChestInventoryProxy()
         if (proxy.isRegistered(pal.database)) {

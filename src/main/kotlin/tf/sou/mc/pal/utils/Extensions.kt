@@ -16,13 +16,10 @@
  */
 package tf.sou.mc.pal.utils
 
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.Material.CHEST
-import org.bukkit.Material.TRAPPED_CHEST
 import org.bukkit.block.Container
 import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
@@ -53,9 +50,9 @@ fun Location.toVectorString(): String = toVector().toString()
 fun PlayerEvent.reply(content: String) = player.sendMessage(content)
 
 /**
- * Attempts to find the appropriate [ItemFrame] for a chest location.
+ * Attempts to find the appropriate [ItemFrame] for a container location.
  *
- * _Note: This performs an expensive distance calculation to find the correct chest._
+ * _Note: This performs an expensive distance calculation to find the correct container._
  * @see ItemFrameResult
  */
 fun Location.findItemFrame(): ItemFrameResult {
@@ -65,18 +62,25 @@ fun Location.findItemFrame(): ItemFrameResult {
         // oh oh.
         return ItemFrameResult.NoFrame
     }
-    val frame = frames
+
+    val targetLocation = block.location.toBlockLocation()
+    val attachedFrames = frames.filter {
+        it.location.block.getRelative(it.attachedFace).location.toBlockLocation() == targetLocation
+    }
+    if (attachedFrames.isEmpty()) {
+        return ItemFrameResult.NoFrame
+    }
+
+    val framesWithItem = attachedFrames.filterNot { it.item.type.isEmpty }
+    if (framesWithItem.isEmpty()) {
+        return ItemFrameResult.NoItem
+    }
+
+    val frame = framesWithItem
         .minByOrNull { it.location.toBlockLocation().distance(this) }
         ?: error("This should never happen")
 
-    val attachedType = frame.location.block.getRelative(frame.attachedFace).type
-    if ((attachedType == CHEST || attachedType == TRAPPED_CHEST) &&
-        !frame.item.type.isEmpty
-    ) {
-        return ItemFrameResult.Found(frame)
-    }
-
-    return ItemFrameResult.NoItem
+    return ItemFrameResult.Found(frame)
 }
 
 /**
