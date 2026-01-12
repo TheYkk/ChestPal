@@ -22,9 +22,11 @@ import org.bukkit.conversations.ConversationFactory
 import org.bukkit.conversations.PluginNameConversationPrefix
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.Inventory
 import tf.sou.mc.pal.ChestPal
 import tf.sou.mc.pal.domain.HoeType
@@ -142,20 +144,22 @@ class ChestListener(private val pal: ChestPal) : Listener {
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
-        // Use the improved HoeType.find(ItemStack) which checks for tool metadata.
-        val hoeType = event.item?.let { HoeType.find(it) } ?: return
-        if (event.clickedBlock?.type != Material.CHEST) {
-            return
-        }
+        // Only handle the main-hand interaction to avoid firing twice (offhand + main hand).
+        if (event.hand != EquipmentSlot.HAND) return
+        if (event.action != Action.RIGHT_CLICK_BLOCK) return
+
+        val clickedBlock = event.clickedBlock ?: return
+        if (clickedBlock.type != Material.CHEST && clickedBlock.type != Material.TRAPPED_CHEST) return
+
+        val itemInHand = event.player.inventory.itemInMainHand
+        val hoeType = HoeType.find(itemInHand) ?: return
         hoeType.act(event, pal)
         event.isCancelled = true
     }
 
     @EventHandler
     fun onBlockBreakEvent(event: BlockBreakEvent) {
-        if (event.block.type != Material.CHEST) {
-            return
-        }
+        if (event.block.type != Material.CHEST && event.block.type != Material.TRAPPED_CHEST) return
 
         val container = event.block.location.resolveContainer() ?: return
         val proxy = container.inventory.toChestInventoryProxy()

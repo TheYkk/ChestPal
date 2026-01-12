@@ -20,6 +20,7 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import tf.sou.mc.pal.utils.RECEIVER_ENCHANTMENT
 import tf.sou.mc.pal.utils.RECEIVER_HOE_NAME
@@ -60,14 +61,16 @@ class ChestToolsCommand : CommandExecutor {
     private fun createTools(): Pair<ItemStack, ItemStack> {
         val senderTool = SENDER_MATERIAL.asSingleItem()
         senderTool.editMeta {
-            it.addEnchant(SENDER_ENCHANTMENT, -1, true)
+            it.addEnchant(SENDER_ENCHANTMENT, 1, true)
             it.displayName(SENDER_HOE_NAME.asTextComponent())
+            it.addItemFlags(ItemFlag.HIDE_ENCHANTS)
         }
 
         val receiverTool = RECEIVER_MATERIAL.asSingleItem()
         receiverTool.editMeta {
-            it.addEnchant(RECEIVER_ENCHANTMENT, -1, true)
+            it.addEnchant(RECEIVER_ENCHANTMENT, 1, true)
             it.displayName(RECEIVER_HOE_NAME.asTextComponent())
+            it.addItemFlags(ItemFlag.HIDE_ENCHANTS)
         }
 
         return senderTool to receiverTool

@@ -17,10 +17,12 @@
 package tf.sou.mc.pal.utils
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Material.CHEST
+import org.bukkit.Material.TRAPPED_CHEST
 import org.bukkit.block.Container
 import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
@@ -38,7 +40,7 @@ fun Material.asSingleItem() = ItemStack(this, 1)
 /**
  * Transforms this string to a [TextComponent][net.kyori.adventure.text.TextComponent].
  */
-fun String.asTextComponent() = Component.text(this)
+fun String.asTextComponent() = LegacyComponentSerializer.legacySection().deserialize(this)
 
 /**
  * Transforms this location to a vectorised string.
@@ -67,7 +69,8 @@ fun Location.findItemFrame(): ItemFrameResult {
         .minByOrNull { it.location.toBlockLocation().distance(this) }
         ?: error("This should never happen")
 
-    if (frame.location.block.getRelative(frame.attachedFace).type == CHEST &&
+    val attachedType = frame.location.block.getRelative(frame.attachedFace).type
+    if ((attachedType == CHEST || attachedType == TRAPPED_CHEST) &&
         !frame.item.type.isEmpty
     ) {
         return ItemFrameResult.Found(frame)

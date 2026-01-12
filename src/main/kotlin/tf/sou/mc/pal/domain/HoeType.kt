@@ -17,6 +17,7 @@
 package tf.sou.mc.pal.domain
 
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
@@ -95,6 +96,15 @@ enum class HoeType(private val material: Material) : EventActor<PlayerInteractEv
     }, ;
 
     companion object {
+        private fun stripColorOrOriginal(value: String): String = ChatColor.stripColor(value) ?: value
+
+        private fun matchesDisplayName(displayName: String?, expected: String): Boolean {
+            if (displayName == null) return false
+            if (displayName == expected) return true
+            return stripColorOrOriginal(displayName)
+                .equals(stripColorOrOriginal(expected), ignoreCase = true)
+        }
+
         /**
          * Attempts to find the appropriate enum based on the provided [ItemStack].
          * Check for material, enchantment, and display name to ensure it's the correct tool.
@@ -108,8 +118,8 @@ enum class HoeType(private val material: Material) : EventActor<PlayerInteractEv
             return when (type) {
                 SENDER -> {
                     val displayName = meta.displayName()?.let { serializer.serialize(it) }
-                    if (meta.hasEnchant(SENDER_ENCHANTMENT) &&
-                        displayName == SENDER_HOE_NAME
+                    if (meta.hasEnchant(SENDER_ENCHANTMENT) ||
+                        matchesDisplayName(displayName, SENDER_HOE_NAME)
                     ) {
                         SENDER
                     } else {
@@ -118,8 +128,8 @@ enum class HoeType(private val material: Material) : EventActor<PlayerInteractEv
                 }
                 RECEIVER -> {
                     val displayName = meta.displayName()?.let { serializer.serialize(it) }
-                    if (meta.hasEnchant(RECEIVER_ENCHANTMENT) &&
-                        displayName == RECEIVER_HOE_NAME
+                    if (meta.hasEnchant(RECEIVER_ENCHANTMENT) ||
+                        matchesDisplayName(displayName, RECEIVER_HOE_NAME)
                     ) {
                         RECEIVER
                     } else {
