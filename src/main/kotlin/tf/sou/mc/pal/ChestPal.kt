@@ -16,13 +16,13 @@
  */
 package tf.sou.mc.pal
 
-import kotlin.properties.Delegates
 import org.bukkit.plugin.java.JavaPlugin
 import tf.sou.mc.pal.commands.ChestToolsCommand
 import tf.sou.mc.pal.commands.TestCommand
 import tf.sou.mc.pal.listeners.ChestListener
 import tf.sou.mc.pal.persistence.Database
 import tf.sou.mc.pal.persistence.JsonDatabase
+import kotlin.properties.Delegates
 
 /**
  * Main plugin entry point.
@@ -32,12 +32,14 @@ class ChestPal : JavaPlugin() {
     var database by Delegates.notNull<Database>()
 
     override fun onEnable() {
+        // FIX: Call saveDefaultConfig() before accessing config to ensure it exists.
+        saveDefaultConfig()
+
         if (conf["enabled"] == false) {
             server.consoleSender.sendMessage("Chest Pal is disabled!")
             return
         }
 
-        saveDefaultConfig()
         database = JsonDatabase(dataFolder)
         server.pluginManager.registerEvents(ChestListener(this), this)
         // Register all commands.

@@ -16,10 +16,10 @@
  */
 package tf.sou.mc.pal.persistence
 
-import java.io.File
 import org.bukkit.Location
 import org.bukkit.Material
 import tf.sou.mc.pal.json.JsonSerializer
+import java.io.File
 
 /**
  * Json database used for storing serialized location data.
@@ -29,8 +29,10 @@ class JsonDatabase(configDirectory: File) : Database {
     private val receiverLocations = configDirectory.resolve("chest_location_data.json")
     private val senderLocations = configDirectory.resolve("sender_locations.json")
     private val locationCache = LocationCache.fromFiles(
-        receiverLocations, senderLocations,
-        serializer::jsonToLocations, serializer::jsonToReceiverChests
+        receiverLocations,
+        senderLocations,
+        serializer::jsonToLocations,
+        serializer::jsonToReceiverChests,
     )
 
     init {

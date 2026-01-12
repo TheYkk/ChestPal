@@ -30,28 +30,22 @@ object JsonSerializer {
     /**
      * Serializes a collection of [locations][Location] to a JSON string.
      */
-    fun locationsToJson(locations: Collection<Location>): String {
-        return gson.toJson(locations)
-    }
+    fun locationsToJson(locations: Collection<Location>): String = gson.toJson(locations)
 
     /**
      * Deserializes a JSON string to a list.
      */
-    fun jsonToLocations(json: String): List<Location> {
-        return gson.fromJson(json, Array<Location>::class.java).toList()
-    }
+    fun jsonToLocations(json: String): List<Location> =
+        gson.fromJson(json, Array<Location>::class.java).toList()
 
     /**
      * Serializes a [ReceiverChests] to a JSON string.
      */
-    fun receiverChestsToJson(chests: ReceiverChests): String {
-        return gson.toJson(chests)
-    }
+    fun receiverChestsToJson(chests: ReceiverChests): String = gson.toJson(chests)
 
     /**
      * Deserializes a JSON string to a [ReceiverChests].
      */
-    fun jsonToReceiverChests(json: String): ReceiverChests {
-        return gson.fromJson(json, ReceiverChests::class.java)
-    }
+    fun jsonToReceiverChests(json: String): ReceiverChests =
+        gson.fromJson(json, ReceiverChests::class.java)
 }

@@ -32,7 +32,7 @@ class TestCommand : CommandExecutor {
         sender: CommandSender,
         command: Command,
         label: String,
-        args: Array<out String>
+        args: Array<out String>,
     ): Boolean {
         if (sender !is Player) {
             sender.sendMessage("You need to invoke this command from a player account!")

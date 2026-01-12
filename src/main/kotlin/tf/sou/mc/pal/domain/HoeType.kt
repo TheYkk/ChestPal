@@ -18,16 +18,21 @@ package tf.sou.mc.pal.domain
 
 import org.bukkit.Material
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 import tf.sou.mc.pal.ChestPal
-import tf.sou.mc.pal.utils.SENDER_MATERIAL
+import tf.sou.mc.pal.utils.RECEIVER_ENCHANTMENT
+import tf.sou.mc.pal.utils.RECEIVER_HOE_NAME
 import tf.sou.mc.pal.utils.RECEIVER_MATERIAL
-import tf.sou.mc.pal.utils.resolveContainer
-import tf.sou.mc.pal.utils.toVectorString
-import tf.sou.mc.pal.utils.toPrettyString
-import tf.sou.mc.pal.utils.findItemFrame
-import tf.sou.mc.pal.utils.toChestInventoryProxy
+import tf.sou.mc.pal.utils.SENDER_ENCHANTMENT
+import tf.sou.mc.pal.utils.SENDER_HOE_NAME
+import tf.sou.mc.pal.utils.SENDER_MATERIAL
 import tf.sou.mc.pal.utils.asTextComponent
+import tf.sou.mc.pal.utils.findItemFrame
 import tf.sou.mc.pal.utils.reply
+import tf.sou.mc.pal.utils.resolveContainer
+import tf.sou.mc.pal.utils.toChestInventoryProxy
+import tf.sou.mc.pal.utils.toPrettyString
+import tf.sou.mc.pal.utils.toVectorString
 
 /**
  * Stateless actor enum for [Material] based interactions with a chest.
@@ -86,12 +91,38 @@ enum class HoeType(private val material: Material) : EventActor<PlayerInteractEv
                 }
             }
         }
-    };
+    }, ;
 
     companion object {
         /**
-         * Attempts to find the appropriate enum based on the provided [Material].
+         * Attempts to find the appropriate enum based on the provided [ItemStack].
+         * FIX: Check for material, enchantment, and display name to ensure it's the correct tool.
          */
-        fun find(material: Material) = values().find { it.material == material }
+        fun find(item: ItemStack): HoeType? {
+            val type = values().find { it.material == item.type } ?: return null
+
+            val meta = item.itemMeta ?: return null
+            return when (type) {
+                SENDER -> {
+                    if (meta.hasEnchant(SENDER_ENCHANTMENT) &&
+                        meta.displayName() == SENDER_HOE_NAME.asTextComponent()
+                    ) {
+                        SENDER
+                    } else {
+                        null
+                    }
+                }
+                RECEIVER -> {
+                    if (meta.hasEnchant(RECEIVER_ENCHANTMENT) &&
+                        meta.displayName() == RECEIVER_HOE_NAME.asTextComponent()
+                    ) {
+                        RECEIVER
+                    } else {
+                        null
+                    }
+                }
+                else -> type
+            }
+        }
     }
 }

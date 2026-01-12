@@ -27,9 +27,8 @@ import tf.sou.mc.pal.ChestPal
  * This takes care of deciding whether a chest should be deleted from the system or not.
  */
 class ChestBreakPrompt : BooleanPrompt() {
-    override fun getPromptText(context: ConversationContext): String {
-        return "Do you want to remove this chest from the system?"
-    }
+    override fun getPromptText(context: ConversationContext): String =
+        "Do you want to remove this chest from the system?"
 
     override fun acceptValidatedInput(context: ConversationContext, input: Boolean): Prompt? {
         if (!input) {
@@ -38,7 +37,10 @@ class ChestBreakPrompt : BooleanPrompt() {
         }
         val block = context.getSessionData("block") as Block
         val db = (context.plugin as ChestPal).database
-        block.run { db.removeLocation(location); breakNaturally() }
+        block.run {
+            db.removeLocation(location)
+            breakNaturally()
+        }
         return END_OF_CONVERSATION
     }
 }

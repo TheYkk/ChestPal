@@ -21,7 +21,15 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import tf.sou.mc.pal.utils.*
+import tf.sou.mc.pal.utils.RECEIVER_ENCHANTMENT
+import tf.sou.mc.pal.utils.RECEIVER_HOE_NAME
+import tf.sou.mc.pal.utils.RECEIVER_MATERIAL
+import tf.sou.mc.pal.utils.SENDER_ENCHANTMENT
+import tf.sou.mc.pal.utils.SENDER_HOE_NAME
+import tf.sou.mc.pal.utils.SENDER_MATERIAL
+import tf.sou.mc.pal.utils.asSingleItem
+import tf.sou.mc.pal.utils.asTextComponent
+import tf.sou.mc.pal.utils.redMessage
 
 /**
  * Tool command for the [ChestPal][tf.sou.mc.pal.ChestPal] plugin.
@@ -32,7 +40,7 @@ class ChestToolsCommand : CommandExecutor {
         sender: CommandSender,
         command: Command,
         label: String,
-        args: Array<out String>
+        args: Array<out String>,
     ): Boolean {
         if (sender !is Player) {
             sender.sendMessage("You need to invoke this command from a player account!")

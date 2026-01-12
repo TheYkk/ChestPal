@@ -16,7 +16,6 @@
  */
 package tf.sou.mc.pal.listeners
 
-
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.conversations.ConversationFactory
@@ -27,19 +26,18 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 import tf.sou.mc.pal.ChestPal
 import tf.sou.mc.pal.domain.HoeType
 import tf.sou.mc.pal.domain.ItemFrameResult
 import tf.sou.mc.pal.prompts.ChestBreakPrompt
-import tf.sou.mc.pal.utils.toChestInventoryProxy
-import tf.sou.mc.pal.utils.resolveContainer
-import tf.sou.mc.pal.utils.countAvailableSpace
 import tf.sou.mc.pal.utils.asItemStacks
-import tf.sou.mc.pal.utils.toPrettyString
-import tf.sou.mc.pal.utils.findItemFrame
+import tf.sou.mc.pal.utils.countAvailableSpace
 import tf.sou.mc.pal.utils.findBadItems
+import tf.sou.mc.pal.utils.findItemFrame
 import tf.sou.mc.pal.utils.redMessage
+import tf.sou.mc.pal.utils.resolveContainer
+import tf.sou.mc.pal.utils.toChestInventoryProxy
+import tf.sou.mc.pal.utils.toPrettyString
 
 /**
  * Listeners for chest based events.
@@ -62,53 +60,68 @@ class ChestListener(private val pal: ChestPal) : Listener {
             return
         }
 
-        val eventChest = location.resolveContainer() ?: error("This should never happen")
+        val eventChest = location.resolveContainer() ?: return
         val eventInventory = eventChest.inventory.toChestInventoryProxy()
         if (eventInventory.isReceiver(database = pal.database)) {
             handleClosedReceiverChest(location, inventory, event)
             return
         }
 
-
+        // FIX: Group items by material to optimize database lookups and avoid redundant processing.
         val chestItems = inventory.contents
             .filterNotNull()
+            .groupBy { it.type }
 
-        for (material in chestItems) {
-            var transportAmount = material.amount
-            val receiverChests = pal.database.receiverLocationsFor(material.type)
+        for ((materialType, items) in chestItems) {
+            val receiverChests = pal.database.receiverLocationsFor(materialType)
             if (receiverChests.isEmpty()) {
                 continue
             }
 
+            var totalTransportAmount = items.sumOf { it.amount }
+            val originalItem = items.first() // Use as template for metadata
+
             val iterator = receiverChests.iterator()
-            while (transportAmount > 0 && iterator.hasNext()) {
+            while (totalTransportAmount > 0 && iterator.hasNext()) {
                 val chest =
-                    iterator.next().resolveContainer() ?: error("Unable to find receiver chest!")
-                // Check how much space this container has
-                // and calculate how many items we are allowed to add.
-                val available = chest.inventory.countAvailableSpace(material.type)
-                val allowedToAdd = available.coerceAtMost(transportAmount)
-                allowedToAdd.asItemStacks(material).forEach { chest.inventory.addItem(it) }
-                transportAmount -= allowedToAdd
+                    iterator.next().resolveContainer() ?: continue
+
+                val available = chest.inventory.countAvailableSpace(materialType)
+                val allowedToAdd = available.coerceAtMost(totalTransportAmount)
+                if (allowedToAdd > 0) {
+                    allowedToAdd.asItemStacks(originalItem).forEach { chest.inventory.addItem(it) }
+                    totalTransportAmount -= allowedToAdd
+                }
             }
 
-            eventChest.inventory.remove(material)
-            if (transportAmount > 0) {
-                // Re-add leftover items.
-                transportAmount.asItemStacks(material).forEach { eventChest.inventory.addItem(it) }
+            // FIX: Safely remove items from the source inventory.
+            // Instead of inventory.remove(ItemStack), we remove by type and amount.
+            var amountToRemove = items.sumOf { it.amount } - totalTransportAmount
+            if (amountToRemove > 0) {
+                val removedCount = amountToRemove
+                for (slot in 0 until inventory.size) {
+                    val item = inventory.getItem(slot) ?: continue
+                    if (item.type == materialType) {
+                        if (item.amount <= amountToRemove) {
+                            amountToRemove -= item.amount
+                            inventory.setItem(slot, null)
+                        } else {
+                            item.amount -= amountToRemove
+                            amountToRemove = 0
+                        }
+                    }
+                    if (amountToRemove <= 0) break
+                }
+                event.player.sendMessage("Moved ${materialType.toPrettyString()} (x$removedCount)")
             }
-
-            (material.amount - transportAmount).takeIf { it > 0 }
-                ?.let { event.player.sendMessage("Moved ${material.type.toPrettyString()} (x$it)") }
         }
     }
 
     private fun handleClosedReceiverChest(
         location: Location,
         inventory: Inventory,
-        event: InventoryCloseEvent
+        event: InventoryCloseEvent,
     ) {
-        // This could be a cache lookup in the future.
         val item = location.findItemFrame() as? ItemFrameResult.Found ?: return
         val allowedItem = item.frame.item.type
         val badItems = inventory.findBadItems(allowedItem)
@@ -118,14 +131,19 @@ class ChestListener(private val pal: ChestPal) : Listener {
         // Clean up.
         badItems.forEach {
             inventory.remove(it)
-            event.player.inventory.addItem(it)         
+            // FIX: Handle full player inventory by dropping items at their feet.
+            val leftover = event.player.inventory.addItem(it)
+            leftover.values.forEach { remaining ->
+                event.player.world.dropItemNaturally(event.player.location, remaining)
+            }
         }
         event.player.sendMessage("This receiver chest only takes ${allowedItem.toPrettyString()}!")
     }
 
     @EventHandler
-    fun onPlayerInteractEntityEvent(event: PlayerInteractEvent) {
-        val hoeType = event.item?.let { HoeType.find(it.type) } ?: return
+    fun onPlayerInteract(event: PlayerInteractEvent) {
+        // FIX: Use the improved HoeType.find(ItemStack) which checks for tool metadata.
+        val hoeType = event.item?.let { HoeType.find(it) } ?: return
         if (event.clickedBlock?.type != Material.CHEST) {
             return
         }

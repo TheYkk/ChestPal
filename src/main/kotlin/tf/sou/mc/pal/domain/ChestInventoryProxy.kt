@@ -39,25 +39,19 @@ class ChestInventoryProxy(private val inventory: Inventory) {
      *
      * @see Database.isRegisteredChest
      */
-    fun isRegistered(database: Database): Boolean {
-        return database.validator(Database::isRegisteredChest)
-    }
+    fun isRegistered(database: Database): Boolean = database.validator(Database::isRegisteredChest)
 
     /**
      * Checks whether this proxy is a receiver chest.
      *
      * @see Database.isReceiverChest
      */
-    fun isReceiver(database: Database): Boolean {
-        return database.validator(Database::isReceiverChest)
-    }
+    fun isReceiver(database: Database): Boolean = database.validator(Database::isReceiverChest)
 
     /**
      * Checks whether this proxy is a sender chest.
      *
      * @see Database.isSenderChest
      */
-    fun isSender(database: Database): Boolean {
-        return database.validator(Database::isSenderChest)
-    }
+    fun isSender(database: Database): Boolean = database.validator(Database::isSenderChest)
 }

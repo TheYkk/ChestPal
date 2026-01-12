@@ -79,9 +79,7 @@ fun Location.findItemFrame(): ItemFrameResult {
 /**
  * Resolves this location to a nullable [Container].
  */
-fun Location.resolveContainer(): Container? {
-    return world.getBlockAt(this).state as? Container
-}
+fun Location.resolveContainer(): Container? = world.getBlockAt(this).state as? Container
 
 /**
  * Partitions this integer into a list of item stacks based
@@ -89,17 +87,27 @@ fun Location.resolveContainer(): Container? {
  */
 fun Int.asItemStacks(material: ItemStack): List<ItemStack> {
     val size = material.maxStackSize
-    val chunks = (1..this / size).map { material.amount = size ; material}
-    return (this % size).takeIf { it != 0 }?.let {material.amount=it ; chunks + material } ?: chunks
+    // FIX: Use material.clone() to avoid modifying the same reference.
+    val chunks = (1..this / size).map { material.clone().apply { amount = size } }
+    return (this % size).takeIf { it != 0 }
+        ?.let { chunks + material.clone().apply { amount = it } }
+        ?: chunks
 }
 
 /**
- * Counts the amount of available space in an inventory.
+ * Counts the amount of available space in an inventory for a specific material.
  * This is based on the maximum stack size of the provided [Material].
  */
 fun Inventory.countAvailableSpace(item: Material): Int {
     val maxSize = item.maxStackSize
-    return contents.sumOf { if (it == null) maxSize else maxSize - it.amount }
+    // FIX: Only count empty slots or slots with the same material.
+    return contents.sumOf {
+        when {
+            it == null -> maxSize
+            it.type == item -> maxSize - it.amount
+            else -> 0
+        }
+    }
 }
 
 /**
