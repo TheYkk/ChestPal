@@ -22,6 +22,24 @@ import org.bukkit.Material
 import tf.sou.mc.pal.domain.MaterialLocation
 import tf.sou.mc.pal.domain.ReceiverChests
 
+internal fun <K, V> removeFromSetsMap(map: MutableMap<K, MutableSet<V>>, value: V): Boolean {
+    val iterator = map.entries.iterator()
+    while (iterator.hasNext()) {
+        val entry = iterator.next()
+        if (!entry.value.remove(value)) {
+            continue
+        }
+
+        if (entry.value.isEmpty()) {
+            iterator.remove()
+        }
+
+        return true
+    }
+
+    return false
+}
+
 /**
  * Cache class to facilitate interactions between the json layer and [Location] objects.
  */
@@ -29,7 +47,7 @@ class LocationCache(receivers: ReceiverChests, senderLocations: List<Location>) 
     private val receiverChests = receivers
         .data.associate { it.material to it.receivers.toMutableSet() }.toMutableMap()
     internal val senderLocations = senderLocations.toMutableSet()
-    private var cachedChestLocations = receiverChests.values.flatten()
+    private var cachedChestLocations = receiverChests.values.flatten().toSet()
 
     internal fun receiverLocationsFor(material: Material): Set<Location>? = receiverChests[material]
 
@@ -50,8 +68,9 @@ class LocationCache(receivers: ReceiverChests, senderLocations: List<Location>) 
         if (senderLocations.remove(location)) {
             return true
         }
-        if (receiverChests.entries.removeIf { it.value.contains(location) }) {
-            cachedChestLocations = receiverChests.values.flatten()
+
+        if (removeFromSetsMap(receiverChests, location)) {
+            cachedChestLocations = receiverChests.values.flatten().toSet()
             return true
         }
         return false
@@ -59,7 +78,7 @@ class LocationCache(receivers: ReceiverChests, senderLocations: List<Location>) 
 
     internal fun addReceiverLocation(material: Material, location: Location): Boolean {
         val result = receiverChests.computeIfAbsent(material) { mutableSetOf() }.add(location)
-        cachedChestLocations = receiverChests.values.flatten()
+        cachedChestLocations = receiverChests.values.flatten().toSet()
         return result
     }
 

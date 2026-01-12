@@ -20,15 +20,24 @@ import net.kyori.adventure.text.Component
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.Material.CHEST
 import org.bukkit.block.Container
 import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import tf.sou.mc.pal.domain.ChestInventoryProxy
 import tf.sou.mc.pal.domain.ItemFrameResult
+
+private val supportedStorageInventoryTypes: Set<InventoryType> by lazy(LazyThreadSafetyMode.NONE) {
+    setOf(InventoryType.CHEST, InventoryType.BARREL)
+}
+
+/**
+ * Returns whether this [Container] is a supported ChestPal storage container (chests + barrels).
+ */
+fun Container.isSupportedStorage(): Boolean = inventory.type in supportedStorageInventoryTypes
 
 /**
  * Transforms this material to an [ItemStack] with a single block.
@@ -67,7 +76,11 @@ fun Location.findItemFrame(): ItemFrameResult {
         .minByOrNull { it.location.toBlockLocation().distance(this) }
         ?: error("This should never happen")
 
-    if (frame.location.block.getRelative(frame.attachedFace).type == CHEST &&
+    val attachedBlock = frame.location.block.getRelative(frame.attachedFace)
+    val attachedContainer = attachedBlock.state as? Container
+    if (
+        attachedContainer?.isSupportedStorage() == true &&
+        attachedBlock.location.toBlockLocation() == this.toBlockLocation() &&
         !frame.item.type.isEmpty
     ) {
         return ItemFrameResult.Found(frame)
@@ -80,7 +93,30 @@ fun Location.findItemFrame(): ItemFrameResult {
  * Resolves this location to a nullable [Container].
  */
 fun Location.resolveContainer(): Container? {
-    return world.getBlockAt(this).state as? Container
+    val w = world ?: return null
+    return w.getBlockAt(this).state as? Container
+}
+
+internal fun <T> Int.asStacks(
+    maxStackSize: Int,
+    template: T,
+    clone: (T) -> T,
+    setAmount: (T, Int) -> Unit
+): List<T> {
+    if (this <= 0) {
+        return emptyList()
+    }
+
+    val stacks = mutableListOf<T>()
+    var remaining = this
+    while (remaining > 0) {
+        val amount = remaining.coerceAtMost(maxStackSize)
+        val stack = clone(template)
+        setAmount(stack, amount)
+        stacks.add(stack)
+        remaining -= amount
+    }
+    return stacks
 }
 
 /**
@@ -88,19 +124,50 @@ fun Location.resolveContainer(): Container? {
  * on the maximum stack size of the provided [Material].
  */
 fun Int.asItemStacks(material: ItemStack): List<ItemStack> {
-    val size = material.maxStackSize
-    val chunks = (1..this / size).map { material.amount = size ; material}
-    return (this % size).takeIf { it != 0 }?.let {material.amount=it ; chunks + material } ?: chunks
+    return asStacks(
+        maxStackSize = material.maxStackSize,
+        template = material,
+        clone = { it.clone() },
+        setAmount = { stack, amount -> stack.amount = amount }
+    )
+}
+
+internal fun <T> countAvailableSpaceFor(
+    contents: Array<T?>,
+    item: T,
+    maxStackSize: Int,
+    isSimilar: (T, T) -> Boolean,
+    amount: (T) -> Int
+): Int {
+    return contents.sumOf { stack ->
+        when {
+            stack == null -> maxStackSize
+            !isSimilar(stack, item) -> 0
+            else -> (maxStackSize - amount(stack)).coerceAtLeast(0)
+        }
+    }
+}
+
+internal fun countAvailableSpace(contents: Array<ItemStack?>, item: ItemStack): Int {
+    return countAvailableSpaceFor(
+        contents = contents,
+        item = item,
+        maxStackSize = item.maxStackSize,
+        isSimilar = { stack, other -> stack.isSimilar(other) },
+        amount = { it.amount }
+    )
 }
 
 /**
  * Counts the amount of available space in an inventory.
- * This is based on the maximum stack size of the provided [Material].
+ * This is based on the maximum stack size of the provided [ItemStack] and similarity checks.
  */
-fun Inventory.countAvailableSpace(item: Material): Int {
-    val maxSize = item.maxStackSize
-    return contents.sumOf { if (it == null) maxSize else maxSize - it.amount }
-}
+fun Inventory.countAvailableSpace(item: ItemStack): Int = countAvailableSpace(contents, item)
+
+/**
+ * Counts the amount of available space in an inventory for an item type.
+ */
+fun Inventory.countAvailableSpace(item: Material): Int = countAvailableSpace(item.asSingleItem())
 
 /**
  * Attempts to find items in an inventory that differ from the provided [Material].
