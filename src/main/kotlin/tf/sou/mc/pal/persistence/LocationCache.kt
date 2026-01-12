@@ -30,7 +30,7 @@ class LocationCache(receivers: ReceiverChests, senderLocations: List<Location>) 
         .data.associate { it.material to it.receivers.toMutableSet() }.toMutableMap()
     internal val senderLocations = senderLocations.toMutableSet()
 
-    // FIX: Use a Set for O(1) lookup instead of a List.
+    // Use a Set for O(1) lookup instead of a List.
     private var cachedChestLocations = receiverChests.values.flatten().toSet()
 
     internal fun receiverLocationsFor(material: Material): Set<Location>? = receiverChests[material]
@@ -52,7 +52,7 @@ class LocationCache(receivers: ReceiverChests, senderLocations: List<Location>) 
         if (senderLocations.remove(location)) {
             return true
         }
-        // FIX: Correctly remove the location from the sets within the map,
+        // Correctly remove the location from the sets within the map,
         // instead of removing the entire map entry.
         var removed = false
         receiverChests.values.forEach {

@@ -87,7 +87,7 @@ fun Location.resolveContainer(): Container? = world.getBlockAt(this).state as? C
  */
 fun Int.asItemStacks(material: ItemStack): List<ItemStack> {
     val size = material.maxStackSize
-    // FIX: Use material.clone() to avoid modifying the same reference.
+    // Use material.clone() to avoid modifying the same reference.
     val chunks = (1..this / size).map { material.clone().apply { amount = size } }
     return (this % size).takeIf { it != 0 }
         ?.let { chunks + material.clone().apply { amount = it } }
@@ -100,7 +100,7 @@ fun Int.asItemStacks(material: ItemStack): List<ItemStack> {
  */
 fun Inventory.countAvailableSpace(item: Material): Int {
     val maxSize = item.maxStackSize
-    // FIX: Only count empty slots or slots with the same material.
+    // Only count empty slots or slots with the same material.
     return contents.sumOf {
         when {
             it == null -> maxSize

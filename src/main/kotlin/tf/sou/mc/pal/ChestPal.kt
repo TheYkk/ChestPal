@@ -32,7 +32,7 @@ class ChestPal : JavaPlugin() {
     var database by Delegates.notNull<Database>()
 
     override fun onEnable() {
-        // FIX: Call saveDefaultConfig() before accessing config to ensure it exists.
+        // Call saveDefaultConfig() before accessing config to ensure it exists.
         saveDefaultConfig()
 
         if (conf["enabled"] == false) {

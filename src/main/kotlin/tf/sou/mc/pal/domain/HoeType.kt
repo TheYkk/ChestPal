@@ -16,6 +16,7 @@
  */
 package tf.sou.mc.pal.domain
 
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Material
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
@@ -96,16 +97,19 @@ enum class HoeType(private val material: Material) : EventActor<PlayerInteractEv
     companion object {
         /**
          * Attempts to find the appropriate enum based on the provided [ItemStack].
-         * FIX: Check for material, enchantment, and display name to ensure it's the correct tool.
+         * Check for material, enchantment, and display name to ensure it's the correct tool.
          */
         fun find(item: ItemStack): HoeType? {
             val type = values().find { it.material == item.type } ?: return null
 
             val meta = item.itemMeta ?: return null
+            val serializer = LegacyComponentSerializer.legacySection()
+
             return when (type) {
                 SENDER -> {
+                    val displayName = meta.displayName()?.let { serializer.serialize(it) }
                     if (meta.hasEnchant(SENDER_ENCHANTMENT) &&
-                        meta.displayName() == SENDER_HOE_NAME.asTextComponent()
+                        displayName == SENDER_HOE_NAME
                     ) {
                         SENDER
                     } else {
@@ -113,8 +117,9 @@ enum class HoeType(private val material: Material) : EventActor<PlayerInteractEv
                     }
                 }
                 RECEIVER -> {
+                    val displayName = meta.displayName()?.let { serializer.serialize(it) }
                     if (meta.hasEnchant(RECEIVER_ENCHANTMENT) &&
-                        meta.displayName() == RECEIVER_HOE_NAME.asTextComponent()
+                        displayName == RECEIVER_HOE_NAME
                     ) {
                         RECEIVER
                     } else {

@@ -67,7 +67,7 @@ class ChestListener(private val pal: ChestPal) : Listener {
             return
         }
 
-        // FIX: Group items by material to optimize database lookups and avoid redundant processing.
+        // Group items by material to optimize database lookups and avoid redundant processing.
         val chestItems = inventory.contents
             .filterNotNull()
             .groupBy { it.type }
@@ -94,7 +94,7 @@ class ChestListener(private val pal: ChestPal) : Listener {
                 }
             }
 
-            // FIX: Safely remove items from the source inventory.
+            // Safely remove items from the source inventory.
             // Instead of inventory.remove(ItemStack), we remove by type and amount.
             var amountToRemove = items.sumOf { it.amount } - totalTransportAmount
             if (amountToRemove > 0) {
@@ -131,7 +131,7 @@ class ChestListener(private val pal: ChestPal) : Listener {
         // Clean up.
         badItems.forEach {
             inventory.remove(it)
-            // FIX: Handle full player inventory by dropping items at their feet.
+            // Handle full player inventory by dropping items at their feet.
             val leftover = event.player.inventory.addItem(it)
             leftover.values.forEach { remaining ->
                 event.player.world.dropItemNaturally(event.player.location, remaining)
@@ -142,7 +142,7 @@ class ChestListener(private val pal: ChestPal) : Listener {
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
-        // FIX: Use the improved HoeType.find(ItemStack) which checks for tool metadata.
+        // Use the improved HoeType.find(ItemStack) which checks for tool metadata.
         val hoeType = event.item?.let { HoeType.find(it) } ?: return
         if (event.clickedBlock?.type != Material.CHEST) {
             return

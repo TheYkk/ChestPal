@@ -28,7 +28,7 @@ internal class ExtensionsKtTest {
     @CsvSource(
         "0|0|0|0.0,0.0,0.0",
         "1.2|3.4|5.6|1.2,3.4,5.6",
-        delimiter = '|'
+        delimiter = '|',
     )
     fun `test location to vector string`(x: Double, y: Double, z: Double, expected: String) {
         val location = Location(null, x, y, z)
@@ -39,7 +39,7 @@ internal class ExtensionsKtTest {
     @CsvSource(
         "DIRT,Dirt",
         "DEEPSLATE_COPPER_ORE,Deepslate Copper Ore",
-        "GOLD_ORE,Gold Ore"
+        "GOLD_ORE,Gold Ore",
     )
     fun `test enum to pretty string`(material: Material, expected: String) {
         assertThat(material.toPrettyString()).isEqualTo(expected)
