@@ -23,6 +23,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.4")
     testImplementation("org.assertj:assertj-core:3.26.3")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
 }

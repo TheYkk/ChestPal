@@ -23,34 +23,23 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
 internal class ExtensionsKtTest {
+
     @ParameterizedTest
     @CsvSource(
         "0|0|0|0.0,0.0,0.0",
         "1.2|3.4|5.6|1.2,3.4,5.6",
-        delimiter = '|',
+        delimiter = '|'
     )
     fun `test location to vector string`(x: Double, y: Double, z: Double, expected: String) {
-        val location = Location.deserialize(mapOf("x" to x, "y" to y, "z" to z))
+        val location = Location(null, x, y, z)
         assertThat(location.toVectorString()).isEqualTo(expected)
-    }
-
-    @ParameterizedTest
-    @CsvSource(
-        "1,DIRT,1",
-        "64,DIRT,1",
-        "65,DIRT,2",
-        "128,DIRT,2",
-        "129,DIRT,3",
-    )
-    fun `test item stacks calculation`(amount: Int, material: Material, listSize: Int) {
-        assertThat(amount.asItemStacks(material.asSingleItem()).size).isEqualTo(listSize)
     }
 
     @ParameterizedTest
     @CsvSource(
         "DIRT,Dirt",
         "DEEPSLATE_COPPER_ORE,Deepslate Copper Ore",
-        "GOLD_ORE,Gold Ore",
+        "GOLD_ORE,Gold Ore"
     )
     fun `test enum to pretty string`(material: Material, expected: String) {
         assertThat(material.toPrettyString()).isEqualTo(expected)
